@@ -8,4 +8,5 @@ public interface FavoriteCityRepository extends JpaRepository<FavoriteCityEntity
     List<FavoriteCityEntity> findAllByAccountId(long accountId);
     List<FavoriteCityEntity> findAllByAccountIdAndCityNameContainingIgnoreCase(long accountId, String cityName);
     Optional<FavoriteCityEntity> findByIdAndAccountId(long id, long accountId);
+    void deleteAllByAccountId(long accountId);
 }

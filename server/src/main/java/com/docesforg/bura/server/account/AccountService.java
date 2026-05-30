@@ -4,15 +4,19 @@ import com.docesforg.bura.server.account.AccountDtos.AccountResponse;
 import com.docesforg.bura.server.account.AccountDtos.AuthResponse;
 import com.docesforg.bura.server.account.AccountDtos.LoginRequest;
 import com.docesforg.bura.server.account.AccountDtos.RegisterRequest;
+import com.docesforg.bura.server.favorite.FavoriteCityRepository;
 import com.docesforg.bura.server.security.JwtService;
+import com.docesforg.bura.server.signal.RadioSignalTestRepository;
+import com.docesforg.bura.server.support.SupportMessageRepository;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -20,17 +24,26 @@ public class AccountService {
     private final UserAccountRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final FavoriteCityRepository favoriteCityRepository;
+    private final RadioSignalTestRepository radioSignalTestRepository;
+    private final SupportMessageRepository supportMessageRepository;
     private final Set<String> adminEmails;
 
     public AccountService(
             UserAccountRepository repository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
+            FavoriteCityRepository favoriteCityRepository,
+            RadioSignalTestRepository radioSignalTestRepository,
+            SupportMessageRepository supportMessageRepository,
             @Value("${app.admin.emails:}") String adminEmails
     ) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.favoriteCityRepository = favoriteCityRepository;
+        this.radioSignalTestRepository = radioSignalTestRepository;
+        this.supportMessageRepository = supportMessageRepository;
         this.adminEmails = Arrays.stream(adminEmails.split(","))
                 .map(String::trim)
                 .map(it -> it.toLowerCase(Locale.ROOT))
@@ -85,6 +98,7 @@ public class AccountService {
         repository.save(account);
     }
 
+    @Transactional
     public void delete(long accountId, boolean allowAdminDelete) {
         UserAccountEntity account = repository.findById(accountId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
@@ -94,7 +108,10 @@ public class AccountService {
                     "Admin deletion requires allowAdminDelete=true"
             );
         }
-        repository.deleteById(accountId);
+        favoriteCityRepository.deleteAllByAccountId(accountId);
+        radioSignalTestRepository.deleteAllByAccountId(accountId);
+        supportMessageRepository.deleteAllByAccountId(accountId);
+        repository.delete(account);
     }
 
     private AuthResponse toAuth(UserAccountEntity account) {

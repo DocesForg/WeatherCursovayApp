@@ -4,16 +4,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.docesforg.bura.server.account.AccountDtos.LoginRequest;
 import com.docesforg.bura.server.account.AccountDtos.RegisterRequest;
+import com.docesforg.bura.server.favorite.FavoriteCityRepository;
 import com.docesforg.bura.server.security.JwtService;
+import com.docesforg.bura.server.signal.RadioSignalTestRepository;
+import com.docesforg.bura.server.support.SupportMessageRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,11 +36,28 @@ class AccountServiceTest {
     @Mock
     private JwtService jwtService;
 
+    @Mock
+    private FavoriteCityRepository favoriteCityRepository;
+
+    @Mock
+    private RadioSignalTestRepository radioSignalTestRepository;
+
+    @Mock
+    private SupportMessageRepository supportMessageRepository;
+
     private AccountService service;
 
     @BeforeEach
     void setUp() {
-        service = new AccountService(repository, passwordEncoder, jwtService, "admin@bura.app");
+        service = new AccountService(
+                repository,
+                passwordEncoder,
+                jwtService,
+                favoriteCityRepository,
+                radioSignalTestRepository,
+                supportMessageRepository,
+                "admin@bura.app"
+        );
     }
 
     @Test
@@ -98,6 +121,22 @@ class AccountServiceTest {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.delete(1L, false));
 
         assertEquals(409, ex.getStatusCode().value());
+        verifyNoInteractions(favoriteCityRepository, radioSignalTestRepository, supportMessageRepository);
+    }
+
+    @Test
+    void deleteRemovesUserRelatedDataBeforeAccount() {
+        UserAccountEntity user = new UserAccountEntity();
+        user.setRole("USER");
+        when(repository.findById(7L)).thenReturn(Optional.of(user));
+
+        service.delete(7L, false);
+
+        InOrder order = inOrder(favoriteCityRepository, radioSignalTestRepository, supportMessageRepository, repository);
+        order.verify(favoriteCityRepository).deleteAllByAccountId(7L);
+        order.verify(radioSignalTestRepository).deleteAllByAccountId(7L);
+        order.verify(supportMessageRepository).deleteAllByAccountId(7L);
+        order.verify(repository).delete(user);
     }
 
     @Test
@@ -108,6 +147,10 @@ class AccountServiceTest {
 
         service.delete(1L, true);
 
-        verify(repository).deleteById(1L);
+        InOrder order = inOrder(favoriteCityRepository, radioSignalTestRepository, supportMessageRepository, repository);
+        order.verify(favoriteCityRepository).deleteAllByAccountId(1L);
+        order.verify(radioSignalTestRepository).deleteAllByAccountId(1L);
+        order.verify(supportMessageRepository).deleteAllByAccountId(1L);
+        order.verify(repository).delete(admin);
     }
 }

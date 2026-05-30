@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RadioSignalTestRepository extends JpaRepository<RadioSignalTestEntity, Long> {
     List<RadioSignalTestEntity> findAllByAccountIdOrderByCreatedAtDesc(long accountId);
+    void deleteAllByAccountId(long accountId);
 }
