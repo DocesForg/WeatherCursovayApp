@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.docesforg.bura.server.account</a> &gt; <span class="el_source">AccountService.java</span></div><h1>AccountService.java</h1><pre class="source lang-java linenums">package com.docesforg.bura.server.account;
+
+import com.docesforg.bura.server.account.AccountDtos.AccountResponse;
+import com.docesforg.bura.server.account.AccountDtos.AuthResponse;
+import com.docesforg.bura.server.account.AccountDtos.LoginRequest;
+import com.docesforg.bura.server.account.AccountDtos.RegisterRequest;
+import com.docesforg.bura.server.security.JwtService;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
+@Service
+public class AccountService {
+    private final UserAccountRepository repository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final Set&lt;String&gt; adminEmails;
+
+    public AccountService(
+            UserAccountRepository repository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            @Value(&quot;${app.admin.emails:}&quot;) String adminEmails
+<span class="fc" id="L30">    ) {</span>
+<span class="fc" id="L31">        this.repository = repository;</span>
+<span class="fc" id="L32">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L33">        this.jwtService = jwtService;</span>
+<span class="fc" id="L34">        this.adminEmails = Arrays.stream(adminEmails.split(&quot;,&quot;))</span>
+<span class="fc" id="L35">                .map(String::trim)</span>
+<span class="fc" id="L36">                .map(it -&gt; it.toLowerCase(Locale.ROOT))</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">                .filter(it -&gt; !it.isBlank())</span>
+<span class="fc" id="L38">                .collect(Collectors.toSet());</span>
+<span class="fc" id="L39">    }</span>
+
+    public AuthResponse register(RegisterRequest request) {
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">        if (repository.existsByEmail(request.email())) {</span>
+<span class="nc" id="L43">            throw new ResponseStatusException(HttpStatus.CONFLICT, &quot;Email already exists&quot;);</span>
+        }
+<span class="fc" id="L45">        UserAccountEntity account = new UserAccountEntity();</span>
+<span class="fc" id="L46">        account.setEmail(request.email());</span>
+<span class="fc" id="L47">        account.setDisplayName(request.displayName());</span>
+<span class="fc" id="L48">        account.setPasswordHash(passwordEncoder.encode(request.password()));</span>
+<span class="fc" id="L49">        account.setRole(resolveRole(request.email()).name());</span>
+<span class="fc" id="L50">        UserAccountEntity saved = repository.save(account);</span>
+<span class="fc" id="L51">        return toAuth(saved);</span>
+    }
+
+    public AuthResponse login(LoginRequest request) {
+<span class="fc" id="L55">        UserAccountEntity account = repository.findByEmail(request.email())</span>
+<span class="pc" id="L56">                .orElseThrow(() -&gt; new ResponseStatusException(HttpStatus.UNAUTHORIZED, &quot;Account not found&quot;));</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (!passwordEncoder.matches(request.password(), account.getPasswordHash())) {</span>
+<span class="fc" id="L58">            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, &quot;Invalid password&quot;);</span>
+        }
+<span class="nc" id="L60">        AccountRole expectedRole = resolveRole(account.getEmail());</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        if (!expectedRole.name().equals(account.getRole())) {</span>
+<span class="nc" id="L62">            account.setRole(expectedRole.name());</span>
+<span class="nc" id="L63">            account = repository.save(account);</span>
+        }
+<span class="nc" id="L65">        return toAuth(account);</span>
+    }
+
+    public AccountResponse get(long accountId) {
+<span class="nc" id="L69">        UserAccountEntity account = repository.findById(accountId)</span>
+<span class="nc" id="L70">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Account not found&quot;));</span>
+<span class="nc" id="L71">        return toDto(account);</span>
+    }
+
+    public AccountResponse updateName(long accountId, String displayName) {
+<span class="nc" id="L75">        UserAccountEntity account = repository.findById(accountId)</span>
+<span class="nc" id="L76">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Account not found&quot;));</span>
+<span class="nc" id="L77">        account.setDisplayName(displayName);</span>
+<span class="nc" id="L78">        return toDto(repository.save(account));</span>
+    }
+
+    public void updatePassword(long accountId, String password) {
+<span class="nc" id="L82">        UserAccountEntity account = repository.findById(accountId)</span>
+<span class="nc" id="L83">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Account not found&quot;));</span>
+<span class="nc" id="L84">        account.setPasswordHash(passwordEncoder.encode(password));</span>
+<span class="nc" id="L85">        repository.save(account);</span>
+<span class="nc" id="L86">    }</span>
+
+    public void delete(long accountId, boolean allowAdminDelete) {
+<span class="fc" id="L89">        UserAccountEntity account = repository.findById(accountId)</span>
+<span class="pc" id="L90">                .orElseThrow(() -&gt; new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;Account not found&quot;));</span>
+<span class="pc bpc" id="L91" title="1 of 4 branches missed.">        if (AccountRole.ADMIN.name().equals(account.getRole()) &amp;&amp; !allowAdminDelete) {</span>
+<span class="fc" id="L92">            throw new ResponseStatusException(</span>
+                    HttpStatus.CONFLICT,
+                    &quot;Admin deletion requires allowAdminDelete=true&quot;
+            );
+        }
+<span class="fc" id="L97">        repository.deleteById(accountId);</span>
+<span class="fc" id="L98">    }</span>
+
+    private AuthResponse toAuth(UserAccountEntity account) {
+<span class="fc" id="L101">        return new AuthResponse(</span>
+<span class="fc" id="L102">                jwtService.createToken(account.getId(), account.getEmail(), account.getRole()),</span>
+<span class="fc" id="L103">                toDto(account)</span>
+        );
+    }
+
+    private AccountResponse toDto(UserAccountEntity account) {
+<span class="fc" id="L108">        return new AccountResponse(account.getId(), account.getEmail(), account.getDisplayName(), account.getRole());</span>
+    }
+
+    private AccountRole resolveRole(String email) {
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        return adminEmails.contains(email.toLowerCase(Locale.ROOT))</span>
+<span class="fc" id="L113">                ? AccountRole.ADMIN</span>
+<span class="fc" id="L114">                : AccountRole.USER;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

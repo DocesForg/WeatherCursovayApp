@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bura}
+    username: ${SPRING_DATASOURCE_USERNAME:bura}
+    password: ${SPRING_DATASOURCE_PASSWORD:bura}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET:dev-secret-change-in-production-32chars-minimum}
+    expiration-seconds: ${APP_JWT_EXPIRATION_SECONDS:86400}
+  admin:
+    emails: ${APP_ADMIN_EMAILS:admin@bura.app}
+  support:
+    mailbox: ${APP_SUPPORT_MAILBOX:support@bura.app}

@@ -1,0 +1,26 @@
+package com.docesforg.bura.uvindex
+
+import android.content.Context
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import com.docesforg.bura.R
+import com.docesforg.bura.common.rememberNumberFormat
+import java.text.NumberFormat
+
+private fun UvIndex.valueString(numberFormat: NumberFormat): String = numberFormat.format(value)
+
+private fun UvIndex.riskString(context: Context): String = context.getString(
+    when (risk) {
+        UvIndex.Risk.Low -> R.string.uv_index_risk_low
+        UvIndex.Risk.Moderate -> R.string.uv_index_risk_moderate
+        UvIndex.Risk.High -> R.string.uv_index_risk_high
+        UvIndex.Risk.VeryHigh -> R.string.uv_index_risk_very_high
+        UvIndex.Risk.Extreme -> R.string.uv_index_risk_extreme
+    }
+)
+
+@Composable
+fun UvIndex.valueString(): String = valueString(rememberNumberFormat())
+
+@Composable
+fun UvIndex.riskString(): String = riskString(LocalContext.current)

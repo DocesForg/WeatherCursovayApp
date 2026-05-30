@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.docesforg.bura.server.admin</a> &gt; <span class="el_source">AdminController.java</span></div><h1>AdminController.java</h1><pre class="source lang-java linenums">package com.docesforg.bura.server.admin;
+
+import com.docesforg.bura.server.account.AccountRole;
+import com.docesforg.bura.server.account.UserAccountEntity;
+import com.docesforg.bura.server.account.UserAccountRepository;
+import com.docesforg.bura.server.favorite.FavoriteCityRepository;
+import com.docesforg.bura.server.signal.RadioSignalTestRepository;
+import com.docesforg.bura.server.support.SupportMessageRepository;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+@RestController
+@RequestMapping
+@PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+public class AdminController {
+    private final UserAccountRepository userAccountRepository;
+    private final FavoriteCityRepository favoriteCityRepository;
+    private final RadioSignalTestRepository radioSignalTestRepository;
+    private final SupportMessageRepository supportMessageRepository;
+
+    public AdminController(
+            UserAccountRepository userAccountRepository,
+            FavoriteCityRepository favoriteCityRepository,
+            RadioSignalTestRepository radioSignalTestRepository,
+            SupportMessageRepository supportMessageRepository
+<span class="fc" id="L37">    ) {</span>
+<span class="fc" id="L38">        this.userAccountRepository = userAccountRepository;</span>
+<span class="fc" id="L39">        this.favoriteCityRepository = favoriteCityRepository;</span>
+<span class="fc" id="L40">        this.radioSignalTestRepository = radioSignalTestRepository;</span>
+<span class="fc" id="L41">        this.supportMessageRepository = supportMessageRepository;</span>
+<span class="fc" id="L42">    }</span>
+
+<span class="nc" id="L44">    public record DashboardResponse(long users, long admins, long favorites, long radioTests, long supportRequests) {</span>
+    }
+
+<span class="fc" id="L47">    public record AccountRoleUpdateRequest(@NotBlank String role) {</span>
+    }
+
+<span class="fc" id="L50">    public record AccountAdminView(Long id, String email, String displayName, String role) {</span>
+    }
+
+    @GetMapping(&quot;/api/admin/dashboard&quot;)
+    public DashboardResponse dashboard() {
+<span class="nc" id="L55">        return new DashboardResponse(</span>
+<span class="nc" id="L56">                userAccountRepository.count(),</span>
+<span class="nc" id="L57">                userAccountRepository.countByRole(AccountRole.ADMIN.name()),</span>
+<span class="nc" id="L58">                favoriteCityRepository.count(),</span>
+<span class="nc" id="L59">                radioSignalTestRepository.count(),</span>
+<span class="nc" id="L60">                supportMessageRepository.countDistinctAccountId()</span>
+        );
+    }
+
+    @GetMapping(&quot;/api/admin/accounts&quot;)
+    public List&lt;AccountAdminView&gt; accounts() {
+<span class="nc" id="L66">        return userAccountRepository.findAll()</span>
+<span class="nc" id="L67">                .stream()</span>
+<span class="nc" id="L68">                .map(it -&gt; new AccountAdminView(it.getId(), it.getEmail(), it.getDisplayName(), it.getRole()))</span>
+<span class="nc" id="L69">                .toList();</span>
+    }
+
+    @PatchMapping(&quot;/api/admin/accounts/{accountId}/role&quot;)
+    public AccountAdminView updateRole(@PathVariable long accountId, @Valid @RequestBody AccountRoleUpdateRequest request) {
+        AccountRole role;
+        try {
+<span class="fc" id="L76">            role = AccountRole.valueOf(request.role().trim().toUpperCase());</span>
+<span class="fc" id="L77">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L78">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;Supported roles: USER, ADMIN&quot;);</span>
+<span class="fc" id="L79">        }</span>
+<span class="fc" id="L80">        UserAccountEntity account = userAccountRepository.findById(accountId)</span>
+<span class="fc" id="L81">                .orElseThrow(() -&gt; new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;Account not found&quot;));</span>
+<span class="fc" id="L82">        account.setRole(role.name());</span>
+<span class="fc" id="L83">        UserAccountEntity saved = userAccountRepository.save(account);</span>
+<span class="fc" id="L84">        return new AccountAdminView(saved.getId(), saved.getEmail(), saved.getDisplayName(), saved.getRole());</span>
+    }
+
+    @GetMapping(value = &quot;/admin/panel&quot;, produces = MediaType.TEXT_HTML_VALUE)
+    public String panel() {
+<span class="nc" id="L89">        return &quot;&quot;&quot;</span>
+                &lt;!doctype html&gt;
+                &lt;html lang=\&quot;ru\&quot;&gt;
+                &lt;head&gt;
+                  &lt;meta charset=\&quot;utf-8\&quot;/&gt;
+                  &lt;title&gt;Bura Admin&lt;/title&gt;
+                  &lt;style&gt;
+                    body { font-family: Arial, sans-serif; margin: 0; background:#f4f6fb; color:#111; }
+                    .layout { display:grid; grid-template-columns: 340px 1fr; height:100vh; }
+                    .sidebar { border-right:1px solid #dde2ef; background:white; display:flex; flex-direction:column; }
+                    .sidebar h2 { margin:16px; }
+                    .users { overflow:auto; padding:0 8px 8px; flex:1; }
+                    .user { padding:10px 12px; border-radius:12px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; align-items:flex-start; margin-bottom:6px; }
+                    .user:hover { background:#f1f4ff; }
+                    .user.active { background:#e6eeff; }
+                    .user .meta { font-size:12px; color:#5f6a85; margin-top:4px; }
+                    .dot { width:10px; height:10px; border-radius:50%; background:#2f80ff; margin-top:6px; flex:0 0 auto; }
+                    .chat { display:flex; flex-direction:column; }
+                    .chat-header { padding:16px; border-bottom:1px solid #dde2ef; background:white; }
+                    .chat-messages { flex:1; overflow:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+                    .bubble { max-width:70%; padding:10px 12px; border-radius:14px; }
+                    .bubble.user { align-self:flex-end; background:#347CF3; color:white; }
+                    .bubble.admin { align-self:flex-start; background:#e9e9ee; color:#000; }
+                    .bubble .sender { font-weight:700; margin-bottom:4px; }
+                    .bubble .time { font-size:11px; opacity:.75; margin-top:6px; }
+                    .chat-input { border-top:1px solid #dde2ef; padding:12px; background:white; display:flex; gap:8px; }
+                    .chat-input input { flex:1; border:1px solid #c7cfdf; border-radius:10px; padding:10px 12px; font-size:14px; }
+                    .chat-input button { border:0; background:#347CF3; color:white; border-radius:10px; padding:0 16px; font-weight:700; cursor:pointer; }
+                    .placeholder { margin:auto; color:#6c7896; }
+                  &lt;/style&gt;
+                &lt;/head&gt;
+                &lt;body&gt;
+                  &lt;div class=\&quot;layout\&quot;&gt;
+                    &lt;aside class=\&quot;sidebar\&quot;&gt;
+                      &lt;h2&gt;Пользовательские чаты&lt;/h2&gt;
+                      &lt;div id=\&quot;users\&quot; class=\&quot;users\&quot;&gt;&lt;/div&gt;
+                    &lt;/aside&gt;
+
+                    &lt;section class=\&quot;chat\&quot;&gt;
+                      &lt;div id=\&quot;chatHeader\&quot; class=\&quot;chat-header\&quot;&gt;Выберите пользователя из списка слева&lt;/div&gt;
+                      &lt;div id=\&quot;chatMessages\&quot; class=\&quot;chat-messages\&quot;&gt;&lt;div class=\&quot;placeholder\&quot;&gt;Нет выбранного чата&lt;/div&gt;&lt;/div&gt;
+                      &lt;div class=\&quot;chat-input\&quot;&gt;
+                        &lt;input id=\&quot;messageInput\&quot; placeholder=\&quot;Введите ответ пользователю\&quot; /&gt;
+                        &lt;button id=\&quot;sendButton\&quot;&gt;Отправить&lt;/button&gt;
+                      &lt;/div&gt;
+                    &lt;/section&gt;
+                  &lt;/div&gt;
+
+                  &lt;script&gt;
+                    const usersEl = document.getElementById('users');
+                    const chatHeaderEl = document.getElementById('chatHeader');
+                    const chatMessagesEl = document.getElementById('chatMessages');
+                    const inputEl = document.getElementById('messageInput');
+                    const sendBtn = document.getElementById('sendButton');
+
+                    let selectedAccountId = null;
+                    let conversations = [];
+                    const tokenFromUrl = new URLSearchParams(window.location.search).get('token');
+                    const tokenFromStorage = window.localStorage.getItem('bura_admin_token');
+                    const authToken = tokenFromUrl || tokenFromStorage || null;
+
+                    async function apiFetch(url, options = {}) {
+                      const headers = Object.assign({}, options.headers || {});
+                      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+                      return fetch(url, Object.assign({}, options, { headers, credentials: 'include' }));
+                    }
+
+                    function escapeHtml(text) {
+                      return (text || '').replaceAll('&amp;', '&amp;amp;').replaceAll('&lt;', '&amp;lt;').replaceAll('&gt;', '&amp;gt;');
+                    }
+
+                    async function loadConversations() {
+                      const res = await apiFetch('/api/admin/support/conversations');
+                      if (!res.ok) {
+                        usersEl.innerHTML = `&lt;div class=\&quot;placeholder\&quot; style=\&quot;padding-top:16px;\&quot;&gt;Не удалось загрузить чаты (HTTP ${res.status})&lt;/div&gt;`;
+                        return;
+                      }
+                      conversations = await res.json();
+                      renderUserList();
+                    }
+
+                    function renderUserList() {
+                      usersEl.innerHTML = conversations.length ? '' : '&lt;div class=&quot;placeholder&quot; style=&quot;padding-top:16px;&quot;&gt;Пока нет обращений&lt;/div&gt;';
+                      conversations.forEach(item =&gt; {
+                        const row = document.createElement('div');
+                        row.className = 'user' + (item.accountId === selectedAccountId ? ' active' : '');
+                        row.innerHTML = `
+                          &lt;div style=\&quot;min-width:0\&quot;&gt;\
+                            &lt;div&gt;&lt;b&gt;${escapeHtml(item.name)}&lt;/b&gt;&lt;/div&gt;\
+                            &lt;div class=\&quot;meta\&quot;&gt;ID: ${item.accountId} · ${escapeHtml(item.email)}&lt;/div&gt;\
+                            &lt;div class=\&quot;meta\&quot;&gt;${escapeHtml(item.lastMessage || '')}&lt;/div&gt;\
+                          &lt;/div&gt;
+                          ${item.unread ? '&lt;div class=&quot;dot&quot;&gt;&lt;/div&gt;' : ''}
+                        `;
+                        row.onclick = () =&gt; openConversation(item.accountId);
+                        usersEl.appendChild(row);
+                      });
+                    }
+
+                    async function openConversation(accountId) {
+                      selectedAccountId = accountId;
+                      renderUserList();
+
+                      const res = await apiFetch(`/api/admin/support/accounts/${accountId}/messages`);
+                      if (!res.ok) {
+                        chatMessagesEl.innerHTML = `&lt;div class=\&quot;placeholder\&quot;&gt;Не удалось открыть чат (HTTP ${res.status})&lt;/div&gt;`;
+                        return;
+                      }
+                      const data = await res.json();
+
+                      chatHeaderEl.textContent = `${data.name} (ID: ${data.accountId}) · ${data.email}`;
+                      chatMessagesEl.innerHTML = '';
+
+                      data.messages.forEach(m =&gt; {
+                        const isAdmin = m.sender === 'ADMIN';
+                        const div = document.createElement('div');
+                        div.className = 'bubble ' + (isAdmin ? 'admin' : 'user');
+                        div.innerHTML = `
+                          &lt;div class=\&quot;sender\&quot;&gt;${isAdmin ? 'Админ' : 'Пользователь'}&lt;/div&gt;
+                          &lt;div&gt;${escapeHtml(m.message)}&lt;/div&gt;
+                          &lt;div class=\&quot;time\&quot;&gt;${escapeHtml(m.createdAt)}&lt;/div&gt;
+                        `;
+                        chatMessagesEl.appendChild(div);
+                      });
+                      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+                      await loadConversations();
+                    }
+
+                    async function sendMessage() {
+                      const text = inputEl.value.trim();
+                      if (!text || !selectedAccountId) return;
+                      const res = await apiFetch(`/api/admin/support/accounts/${selectedAccountId}/messages`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: text })
+                      });
+                      if (!res.ok) {
+                        chatMessagesEl.innerHTML = `&lt;div class=\&quot;placeholder\&quot;&gt;Не удалось отправить сообщение (HTTP ${res.status})&lt;/div&gt;`;
+                        return;
+                      }
+                      inputEl.value = '';
+                      await openConversation(selectedAccountId);
+                    }
+
+                    sendBtn.onclick = sendMessage;
+                    inputEl.addEventListener('keydown', e =&gt; {
+                      if (e.key === 'Enter') sendMessage();
+                    });
+
+                    loadConversations();
+                    setInterval(async () =&gt; {
+                      await loadConversations();
+                      if (selectedAccountId) await openConversation(selectedAccountId);
+                    }, 5000);
+                  &lt;/script&gt;
+                &lt;/body&gt;
+                &lt;/html&gt;
+                &quot;&quot;&quot;;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

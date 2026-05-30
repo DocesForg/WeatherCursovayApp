@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.docesforg.bura.server.admin.AdminControllerTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-05-30T14:13:36.055Z" hostname="VITALPC" time="0.352">
+  <properties/>
+  <testcase name="updateRoleReturnsNotFoundWhenAccountMissing()" classname="com.docesforg.bura.server.admin.AdminControllerTest" time="0.213"/>
+  <testcase name="updateRoleReturnsBadRequestForUnsupportedRole()" classname="com.docesforg.bura.server.admin.AdminControllerTest" time="0.002"/>
+  <testcase name="updateRoleUpdatesAccountWhenRoleIsValid()" classname="com.docesforg.bura.server.admin.AdminControllerTest" time="0.135"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

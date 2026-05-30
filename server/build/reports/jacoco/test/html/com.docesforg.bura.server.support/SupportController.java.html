@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SupportController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.docesforg.bura.server.support</a> &gt; <span class="el_source">SupportController.java</span></div><h1>SupportController.java</h1><pre class="source lang-java linenums">package com.docesforg.bura.server.support;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+@RestController
+@RequestMapping
+public class SupportController {
+    private static final String USER_SENDER = &quot;USER&quot;;
+    private static final String ADMIN_SENDER = &quot;ADMIN&quot;;
+
+    private final SupportMessageRepository messageRepository;
+    private final String supportMailbox;
+
+    public SupportController(
+            SupportMessageRepository messageRepository,
+            @Value(&quot;${app.support.mailbox}&quot;) String supportMailbox
+<span class="fc" id="L34">    ) {</span>
+<span class="fc" id="L35">        this.messageRepository = messageRepository;</span>
+<span class="fc" id="L36">        this.supportMailbox = supportMailbox;</span>
+<span class="fc" id="L37">    }</span>
+
+<span class="nc" id="L39">    public record CreateMessageRequest(@Email String email, @NotBlank String name, @NotBlank String message) {</span>
+    }
+
+<span class="nc" id="L42">    public record SendMessageRequest(@NotBlank String message) {</span>
+    }
+
+<span class="fc" id="L45">    public record SupportMessageResponse(Long id, Long accountId, String sender, String message, Instant createdAt) {</span>
+    }
+
+<span class="fc" id="L48">    public record SupportConversationResponse(Long accountId, String email, String name, String forwardTo,</span>
+                                              List&lt;SupportMessageResponse&gt; messages) {
+    }
+
+<span class="nc" id="L52">    public record AdminConversationSummaryResponse(</span>
+            Long accountId,
+            String email,
+            String name,
+            String lastMessage,
+            Instant lastMessageAt,
+            boolean unread
+    ) {
+    }
+
+    @PreAuthorize(&quot;@accountAccess.canAccess(#accountId, authentication)&quot;)
+    @PostMapping(&quot;/api/accounts/{accountId}/support/messages&quot;)
+    public SupportMessageResponse sendAccountMessage(@PathVariable long accountId, @RequestBody CreateMessageRequest request) {
+<span class="nc" id="L65">        SupportMessageEntity saved = saveMessage(accountId, request.email(), request.name(), USER_SENDER, request.message(), false);</span>
+<span class="nc" id="L66">        return messageResponse(saved);</span>
+    }
+
+    @PreAuthorize(&quot;@accountAccess.canAccess(#accountId, authentication)&quot;)
+    @GetMapping(&quot;/api/accounts/{accountId}/support/messages&quot;)
+    public SupportConversationResponse conversation(@PathVariable long accountId) {
+<span class="fc" id="L72">        return conversationInternal(accountId, false);</span>
+    }
+
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    @GetMapping(&quot;/api/admin/support/conversations&quot;)
+    public List&lt;AdminConversationSummaryResponse&gt; adminConversations() {
+<span class="nc" id="L78">        List&lt;SupportMessageEntity&gt; messages = messageRepository.findAllByOrderByCreatedAtDesc();</span>
+<span class="nc" id="L79">        Map&lt;Long, SupportMessageEntity&gt; latestByAccount = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        for (SupportMessageEntity message : messages) {</span>
+<span class="nc" id="L81">            latestByAccount.putIfAbsent(message.getAccountId(), message);</span>
+<span class="nc" id="L82">        }</span>
+
+<span class="nc" id="L84">        List&lt;AdminConversationSummaryResponse&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        for (SupportMessageEntity latest : latestByAccount.values()) {</span>
+<span class="nc" id="L86">            boolean unread = messageRepository.existsByAccountIdAndSenderAndSeenByAdminFalse(latest.getAccountId(), USER_SENDER);</span>
+<span class="nc" id="L87">            result.add(new AdminConversationSummaryResponse(</span>
+<span class="nc" id="L88">                    latest.getAccountId(),</span>
+<span class="nc" id="L89">                    latest.getEmail(),</span>
+<span class="nc" id="L90">                    latest.getName(),</span>
+<span class="nc" id="L91">                    latest.getMessage(),</span>
+<span class="nc" id="L92">                    latest.getCreatedAt(),</span>
+                    unread
+            ));
+<span class="nc" id="L95">        }</span>
+<span class="nc" id="L96">        return result;</span>
+    }
+
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    @GetMapping(&quot;/api/admin/support/accounts/{accountId}/messages&quot;)
+    public SupportConversationResponse adminConversation(@PathVariable long accountId) {
+<span class="fc" id="L102">        return conversationInternal(accountId, true);</span>
+    }
+
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    @PostMapping(&quot;/api/admin/support/accounts/{accountId}/messages&quot;)
+    public SupportMessageResponse sendAdminMessage(@PathVariable long accountId, @RequestBody SendMessageRequest request) {
+<span class="nc" id="L108">        SupportMessageEntity latest = messageRepository.findFirstByAccountIdOrderByCreatedAtDesc(accountId)</span>
+<span class="nc" id="L109">                .orElseThrow(() -&gt; new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;Support conversation not found&quot;));</span>
+<span class="nc" id="L110">        SupportMessageEntity saved = saveMessage(accountId, latest.getEmail(), latest.getName(), ADMIN_SENDER, request.message(), true);</span>
+<span class="nc" id="L111">        return messageResponse(saved);</span>
+    }
+
+    @PreAuthorize(&quot;@accountAccess.canAccess(#accountId, authentication)&quot;)
+    @DeleteMapping(&quot;/api/accounts/{accountId}/support/messages&quot;)
+    public void deleteConversation(@PathVariable long accountId) {
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (!messageRepository.existsByAccountId(accountId)) {</span>
+<span class="nc" id="L118">            throw new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;Support conversation not found&quot;);</span>
+        }
+<span class="nc" id="L120">        messageRepository.deleteAllByAccountId(accountId);</span>
+<span class="nc" id="L121">    }</span>
+
+    private SupportConversationResponse conversationInternal(long accountId, boolean markSeenForAdmin) {
+<span class="fc" id="L124">        List&lt;SupportMessageEntity&gt; messages = messageRepository.findAllByAccountIdOrderByCreatedAtAsc(accountId);</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (messages.isEmpty()) {</span>
+<span class="fc" id="L126">            throw new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;Support conversation not found&quot;);</span>
+        }
+
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (markSeenForAdmin) {</span>
+<span class="fc" id="L130">            List&lt;SupportMessageEntity&gt; unread = messageRepository.findAllByAccountIdAndSenderAndSeenByAdminFalse(accountId, USER_SENDER);</span>
+<span class="fc" id="L131">            unread.forEach(it -&gt; it.setSeenByAdmin(true));</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">            if (!unread.isEmpty()) {</span>
+<span class="fc" id="L133">                messageRepository.saveAll(unread);</span>
+<span class="fc" id="L134">                messages = messageRepository.findAllByAccountIdOrderByCreatedAtAsc(accountId);</span>
+            }
+        }
+
+<span class="fc" id="L138">        SupportMessageEntity head = messages.get(0);</span>
+<span class="fc" id="L139">        return new SupportConversationResponse(</span>
+<span class="fc" id="L140">                accountId,</span>
+<span class="fc" id="L141">                head.getEmail(),</span>
+<span class="fc" id="L142">                head.getName(),</span>
+<span class="fc" id="L143">                head.getForwardTo(),</span>
+<span class="fc" id="L144">                messages.stream().map(this::messageResponse).toList()</span>
+        );
+    }
+
+    private SupportMessageEntity saveMessage(long accountId, String email, String name, String sender, String text, boolean seenByAdmin) {
+<span class="nc" id="L149">        SupportMessageEntity message = new SupportMessageEntity();</span>
+<span class="nc" id="L150">        message.setAccountId(accountId);</span>
+<span class="nc" id="L151">        message.setEmail(email);</span>
+<span class="nc" id="L152">        message.setName(name);</span>
+<span class="nc" id="L153">        message.setForwardTo(supportMailbox);</span>
+<span class="nc" id="L154">        message.setSender(sender);</span>
+<span class="nc" id="L155">        message.setMessage(text);</span>
+<span class="nc" id="L156">        message.setCreatedAt(Instant.now());</span>
+<span class="nc" id="L157">        message.setSeenByAdmin(seenByAdmin);</span>
+<span class="nc" id="L158">        return messageRepository.save(message);</span>
+    }
+
+    private SupportMessageResponse messageResponse(SupportMessageEntity message) {
+<span class="fc" id="L162">        return new SupportMessageResponse(</span>
+<span class="fc" id="L163">                message.getId(),</span>
+<span class="fc" id="L164">                message.getAccountId(),</span>
+<span class="fc" id="L165">                message.getSender(),</span>
+<span class="fc" id="L166">                message.getMessage(),</span>
+<span class="fc" id="L167">                message.getCreatedAt()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

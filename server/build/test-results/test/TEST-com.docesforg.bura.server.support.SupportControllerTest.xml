@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.docesforg.bura.server.support.SupportControllerTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-05-30T14:13:37.413Z" hostname="VITALPC" time="0.012">
+  <properties/>
+  <testcase name="conversationDoesNotMarkSeenForRegularUserPath()" classname="com.docesforg.bura.server.support.SupportControllerTest" time="0.008"/>
+  <testcase name="adminConversationMarksUnreadMessagesAsSeen()" classname="com.docesforg.bura.server.support.SupportControllerTest" time="0.002"/>
+  <testcase name="adminConversationReturnsNotFoundWhenNoMessages()" classname="com.docesforg.bura.server.support.SupportControllerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
