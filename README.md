@@ -125,19 +125,19 @@ Backend запускается на `http://localhost:8080`.
 
 | Раздел | Содержание |
 |--------|------------|
-| [`00-project-charter/`](docs/00-project-charter/) | Паспорт проекта, ROI, SWOT |
-| [`01-requirements/`](docs/01-requirements/) | Требования, use cases, доменная модель |
-| [`02-architecture/`](docs/02-architecture/) | arc42, PCMEF, интерфейсы, ADR |
-| [`03-database/`](docs/03-database/) | DDL, ORM, структура данных |
-| [`04-detailed-design/`](docs/04-detailed-design/) | Детальное проектирование и спецификации |
-| [`05-implementation/`](docs/05-implementation/) | Реализация слоев и модулей |
-| [`06-testing/`](docs/06-testing/) | Тестирование, JaCoCo, проверки |
-| [`07-refactoring/`](docs/07-refactoring/) | Рефакторинг и паттерны |
-| [`08-ui/`](docs/08-ui/) | Пользовательский интерфейс |
-| [`09-api/`](docs/09-api/) | REST API и Swagger |
-| [`10-deployment/`](docs/10-deployment/) | Docker, CD, администрирование |
-| [`11-user-guide/`](docs/11-user-guide/) | Руководство пользователя и администратора |
-| [`12-final-report/`](docs/12-final-report/) | Финальный отчет и материалы защиты |
+| [`00-project-charter/`](docs/00-project-charter/) | Паспорт проекта, IDEF0, BUC, SWOT, ROI |
+| [`01-requirements/`](docs/01-requirements/) | Use Case, Domain Model, трассировка |
+| [`02-architecture/`](docs/02-architecture/) | PCMEF, ADR, интерфейсы |
+| [`03-database/`](docs/03-database/) | ER-диаграмма, DDL, ORM |
+| [`04-detailed-design/`](docs/04-detailed-design/) | Sequence диаграммы, спецификация методов |
+| [`05-implementation/`](docs/05-implementation/) |  Реализация слоёв |
+| [`06-testing/`](docs/06-testing/) | Тест-планы, JaCoCo, Postman |
+| [`07-refactoring/`](docs/07-refactoring/) | «Запахи кода», Data Mapper, Identity Map |
+| [`08-ui/`](docs/08-ui/) | Скриншоты интерфейсов |
+| [`09-api/`](docs/09-api/) | OpenAPI, Swagger |
+| [`10-deployment/`](docs/10-deployment/) | Docker, CI/CD, администрирование |
+| [`11-user-guide/`](docs/11-user-guide/) | Руководство пользователя |
+| [`12-final-report/`](docs/12-final-report/) | Пояснительная записка, презентация |
 
 ## Архитектура (PCMEF)
 
