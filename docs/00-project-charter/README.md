@@ -110,13 +110,13 @@
 <img src="/docs/00-project-charter/images/IDEF0.png" alt="Диаграмма IDEF0">
 ## Декомпозиция основных процессов
 #### 1. Аутентификация и авторизация
-<img src="/images/decomA1.png" alt="Декомпозиция 1">
+<img src="/docs/00-project-charter/images/decomA1.png" alt="Декомпозиция 1">
 ### 2. Обработка запросов на погоду
-<img src="/images/decomA2.png" alt="Декомпозиция 2">
+<img src="/docs/00-project-charter/images/decomA2.png" alt="Декомпозиция 2">
 ### 3. Управление избранными локациями
-<img src="/images/decomA3.png" alt="Декомпозиция 3">
+<img src="/docs/00-project-charter/images/decomA3.png" alt="Декомпозиция 3">
 ### 4. Тест радиосвязи
-<img src="/images/decomA4.png" alt="Декомпозиция 4">
+<img src="/docs/00-project-charter/images/decomA4.png" alt="Декомпозиция 4">
 
 ## Описание диаграмм IDEF0
 
@@ -139,8 +139,8 @@
 
 # Business Use Case диаграмма Bura
 
-Файл `docs/BUC.md` содержит бизнес-диаграмму вариантов использования Bura. В отличие от технической Use Case диаграммы, она описывает не внутренние экраны, API и хранилища приложения, а бизнес-цели участников и процессы, ради которых используется сервис.
-<img src="/images/buc.png" alt="Business Use Case диаграмма">
+Файл `docs/00-project-charter/code-diagram/BUC.md` содержит бизнес-диаграмму вариантов использования Bura. В отличие от технической Use Case диаграммы, она описывает не внутренние экраны, API и хранилища приложения, а бизнес-цели участников и процессы, ради которых используется сервис.
+<img src="/docs/00-project-charter/images/buc.png" alt="Business Use Case диаграмма">
 ## Участники бизнес-процессов
 
 - **Клиент** — человек, который использует Bura для принятия бытовых или рабочих решений на основе погоды: выбрать одежду, спланировать прогулку, поездку, работу на улице или оценить условия в другом городе.
