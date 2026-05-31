@@ -108,13 +108,18 @@
 
 ## Диаграмма контекстного уровня (A-0) в PlantUML
 <img src="/docs/00-project-charter/images/IDEF0.png" alt="Диаграмма IDEF0">
+
 ## Декомпозиция основных процессов
+
 ### 1. Аутентификация и авторизация
 <img src="/docs/00-project-charter/images/decomA1.png" alt="Декомпозиция 1">
+
 ### 2. Обработка запросов на погоду
 <img src="/docs/00-project-charter/images/decomA2.png" alt="Декомпозиция 2">
+
 ### 3. Управление избранными локациями
 <img src="/docs/00-project-charter/images/decomA3.png" alt="Декомпозиция 3">
+
 ### 4. Тест радиосвязи
 <img src="/docs/00-project-charter/images/decomA4.png" alt="Декомпозиция 4">
 
