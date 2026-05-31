@@ -107,7 +107,7 @@
 # Анализ бизнес-процессов (IDEF0)
 
 ## Диаграмма контекстного уровня (A-0) в PlantUML
-<img src="/images/IDEF0.png" alt="Диаграмма IDEF0">
+<img src="/docs/00-project-charter/images/IDEF0.png" alt="Диаграмма IDEF0">
 ## Декомпозиция основных процессов
 #### 1. Аутентификация и авторизация
 <img src="/images/decomA1.png" alt="Декомпозиция 1">
