@@ -1,15 +1,10 @@
 package com.docesforg.bura.server.admin;
 
-import com.docesforg.bura.server.account.AccountRole;
-import com.docesforg.bura.server.account.UserAccountEntity;
-import com.docesforg.bura.server.account.UserAccountRepository;
-import com.docesforg.bura.server.favorite.FavoriteCityRepository;
-import com.docesforg.bura.server.signal.RadioSignalTestRepository;
-import com.docesforg.bura.server.support.SupportMessageRepository;
+import com.docesforg.bura.server.admin.AdminService.AccountAdminView;
+import com.docesforg.bura.server.admin.AdminService.DashboardResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,70 +13,33 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
-    private final UserAccountRepository userAccountRepository;
-    private final FavoriteCityRepository favoriteCityRepository;
-    private final RadioSignalTestRepository radioSignalTestRepository;
-    private final SupportMessageRepository supportMessageRepository;
+    private final AdminService adminService;
 
-    public AdminController(
-            UserAccountRepository userAccountRepository,
-            FavoriteCityRepository favoriteCityRepository,
-            RadioSignalTestRepository radioSignalTestRepository,
-            SupportMessageRepository supportMessageRepository
-    ) {
-        this.userAccountRepository = userAccountRepository;
-        this.favoriteCityRepository = favoriteCityRepository;
-        this.radioSignalTestRepository = radioSignalTestRepository;
-        this.supportMessageRepository = supportMessageRepository;
-    }
-
-    public record DashboardResponse(long users, long admins, long favorites, long radioTests, long supportRequests) {
+    public AdminController(AdminService adminService) {
+        this.adminService = adminService;
     }
 
     public record AccountRoleUpdateRequest(@NotBlank String role) {
     }
 
-    public record AccountAdminView(Long id, String email, String displayName, String role) {
-    }
-
     @GetMapping("/api/admin/dashboard")
     public DashboardResponse dashboard() {
-        return new DashboardResponse(
-                userAccountRepository.count(),
-                userAccountRepository.countByRole(AccountRole.ADMIN.name()),
-                favoriteCityRepository.count(),
-                radioSignalTestRepository.count(),
-                supportMessageRepository.countDistinctAccountId()
-        );
+        return adminService.dashboard();
     }
 
     @GetMapping("/api/admin/accounts")
     public List<AccountAdminView> accounts() {
-        return userAccountRepository.findAll()
-                .stream()
-                .map(it -> new AccountAdminView(it.getId(), it.getEmail(), it.getDisplayName(), it.getRole()))
-                .toList();
+        return adminService.accounts();
     }
 
     @PatchMapping("/api/admin/accounts/{accountId}/role")
     public AccountAdminView updateRole(@PathVariable long accountId, @Valid @RequestBody AccountRoleUpdateRequest request) {
-        AccountRole role;
-        try {
-            role = AccountRole.valueOf(request.role().trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Supported roles: USER, ADMIN");
-        }
-        UserAccountEntity account = userAccountRepository.findById(accountId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
-        account.setRole(role.name());
-        UserAccountEntity saved = userAccountRepository.save(account);
-        return new AccountAdminView(saved.getId(), saved.getEmail(), saved.getDisplayName(), saved.getRole());
+        return adminService.updateRole(accountId, request.role());
     }
 
     @GetMapping(value = "/admin/panel", produces = MediaType.TEXT_HTML_VALUE)

@@ -37,8 +37,8 @@ class AdminControllerTest {
         when(userAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(userAccountRepository.save(account)).thenReturn(account);
 
-        AdminController controller = new AdminController(userAccountRepository, favoriteCityRepository, radioSignalTestRepository, supportMessageRepository);
-        AdminController.AccountAdminView response = controller.updateRole(accountId, new AdminController.AccountRoleUpdateRequest(" admin "));
+        AdminService service = new AdminService(userAccountRepository, favoriteCityRepository, radioSignalTestRepository, supportMessageRepository);
+        AdminService.AccountAdminView response = service.updateRole(accountId, " admin ");
 
         assertEquals("ADMIN", account.getRole());
         assertEquals("ADMIN", response.role());
@@ -47,10 +47,10 @@ class AdminControllerTest {
 
     @Test
     void updateRoleReturnsBadRequestForUnsupportedRole() {
-        AdminController controller = new AdminController(userAccountRepository, favoriteCityRepository, radioSignalTestRepository, supportMessageRepository);
+        AdminService service = new AdminService(userAccountRepository, favoriteCityRepository, radioSignalTestRepository, supportMessageRepository);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> controller.updateRole(1L, new AdminController.AccountRoleUpdateRequest("manager")));
+                () -> service.updateRole(1L, "manager"));
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     }
@@ -58,10 +58,10 @@ class AdminControllerTest {
     @Test
     void updateRoleReturnsNotFoundWhenAccountMissing() {
         when(userAccountRepository.findById(101L)).thenReturn(Optional.empty());
-        AdminController controller = new AdminController(userAccountRepository, favoriteCityRepository, radioSignalTestRepository, supportMessageRepository);
+        AdminService service = new AdminService(userAccountRepository, favoriteCityRepository, radioSignalTestRepository, supportMessageRepository);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> controller.updateRole(101L, new AdminController.AccountRoleUpdateRequest("USER")));
+                () -> service.updateRole(101L, "USER"));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }

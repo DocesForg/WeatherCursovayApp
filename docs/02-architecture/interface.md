@@ -61,7 +61,7 @@ Android DTO:
 Backend DTO:
 
 - `FavoriteCityController.FavoriteCityRequest`
-- `FavoriteCityController.FavoriteCityResponse`
+- `FavoriteCityService.FavoriteCityResponse`
 
 ### 2.3. Поддержка
 
@@ -84,9 +84,9 @@ Backend DTO:
 
 - `SupportController.CreateMessageRequest`
 - `SupportController.SendMessageRequest`
-- `SupportController.SupportMessageResponse`
-- `SupportController.SupportConversationResponse`
-- `SupportController.AdminConversationSummaryResponse`
+- `SupportService.SupportMessageResponse`
+- `SupportService.SupportConversationResponse`
+- `SupportService.AdminConversationSummaryResponse`
 
 ### 2.4. Радиосигнал
 
@@ -290,7 +290,7 @@ GET https://api.open-meteo.com/v1/forecast
 - `timezone=auto`
 - `past_days=1`
 
-Backend `RadioSignalController` также использует Open-Meteo для получения погодного snapshot при расчете радиосигнала.
+Backend `RadioSignalService` также использует Open-Meteo для получения погодного snapshot при расчете радиосигнала.
 
 ### 5.2. Open-Meteo Geocoding API
 

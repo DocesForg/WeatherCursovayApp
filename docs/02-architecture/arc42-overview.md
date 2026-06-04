@@ -94,7 +94,7 @@ Bura решает задачу персонализированного дост
 |------|---------|---------|-----------------|
 | Presentation | `*Screen.kt`, `*Destination.kt`, Compose-компоненты, тема, навигация | HTML admin panel в `AdminController` | Отображение экранов, ввод пользователя, визуальные состояния. |
 | Control | `AppNavHost`, `*ViewModel`, обработчики действий экранов | `*Controller`, Spring Security filter chain | Прием пользовательских/API-запросов, маршрутизация сценариев, первичная валидация. |
-| Mediator | `*Repository`, use-case классы `Get*`, `Add*`, `Delete*`, converter classes | `AccountService`, `JwtService`, `AccountAccessEvaluator`, расчетные методы `RadioSignalController` | Бизнес-логика, координация нескольких источников данных, преобразование DTO/моделей. |
+| Mediator | `*Repository`, use-case классы `Get*`, `Add*`, `Delete*`, converter classes | `AccountService`, `FavoriteCityService`, `RadioSignalService`, `SupportService`, `UserStatsService`, `AdminService`, `JwtService`, `AccountAccessEvaluator` | Бизнес-логика, координация нескольких источников данных, преобразование DTO/моделей. |
 | Entity | Kotlin data/value classes: `Forecast`, `Place`, `Temperature`, `Humidity`, Room entities | JPA entities: `UserAccountEntity`, `FavoriteCityEntity`, `SupportMessageEntity`, `RadioSignalTestEntity`, DTO records | Предметные данные и структуры обмена. |
 | Foundation | `BuraBackendApi`, `BuraDao`, `ApiProvider`, Room, SharedPreferences, файловый кэш, Open-Meteo downloader | Spring Data JPA repositories, PostgreSQL, `RestClient`, `application*.yml`, Docker Compose | Доступ к внешним API, БД, локальным файлам, инфраструктурной конфигурации. |
 
@@ -184,7 +184,7 @@ SummaryScreen → SummaryViewModel → ForecastRepository
 ```text
 FavoritesDestination → SavedPlacesRepository / FavoritesSyncRepository
 → BuraBackendApi.favorites/addFavorite/deleteFavorite
-→ FavoriteCityController → FavoriteCityRepository → PostgreSQL
+→ FavoriteCityController → FavoriteCityService → FavoriteCityRepository → PostgreSQL
 → ответ DTO → Room BuraDao → UI
 ```
 
@@ -193,7 +193,7 @@ FavoritesDestination → SavedPlacesRepository / FavoritesSyncRepository
 ```text
 RadioSignalDestination → RadioSignalRepository.runSignalTest
 → BuraBackendApi.runSignalTest
-→ RadioSignalController.calculate
+→ RadioSignalController → RadioSignalService.calculate
 → Open-Meteo current weather snapshots
 → расчет distance/path loss/quality/latency/speed
 → RadioSignalTestRepository.save → PostgreSQL
@@ -205,7 +205,7 @@ RadioSignalDestination → RadioSignalRepository.runSignalTest
 ```text
 SupportDestination → SupportRepository.sendMessage
 → BuraBackendApi.sendSupportMessage
-→ SupportController.sendAccountMessage
+→ SupportController → SupportService.sendAccountMessage
 → SupportMessageRepository.save → PostgreSQL
 → admin panel /api/admin/support/** показывает диалог и позволяет ответить
 ```

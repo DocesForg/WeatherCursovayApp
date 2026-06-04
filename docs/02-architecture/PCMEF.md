@@ -149,11 +149,13 @@ Mediator содержит бизнес-операции, преобразова�
 | `AccountService` | Регистрация, вход, смена имени/пароля, удаление аккаунта, каскадная очистка связанных данных. |
 | `JwtService` | Создание и проверка JWT. |
 | `AccountAccessEvaluator` | Решение, может ли текущий пользователь получить доступ к accountId. |
-| Расчетная логика `RadioSignalController` | Расчет расстояния, FSPL/path loss, влияния погоды, качества, latency и speed. |
-| Логика `SupportController` | Сбор admin conversation summary, отметка сообщений прочитанными, формирование conversation DTO. |
-| Логика `AdminController` | Подсчет dashboard-метрик и смена роли аккаунта. |
+| `FavoriteCityService` | CRUD и поиск избранных городов, преобразование JPA-сущностей в DTO. |
+| `RadioSignalService` | Расчет расстояния, FSPL/path loss, влияния погоды, качества, latency и speed; сохранение истории радиотестов. |
+| `SupportService` | Сбор admin conversation summary, отметка сообщений прочитанными, формирование conversation DTO и удаление переписки. |
+| `UserStatsService` | Агрегация количества избранных городов, радиотестов и обращений поддержки. |
+| `AdminService` | Подсчет dashboard-метрик, список аккаунтов и смена роли аккаунта. |
 
-При дальнейшем развитии проекта расчетную логику `RadioSignalController`, `SupportController` и `AdminController` можно вынести в отдельные service-классы, чтобы сделать границу Control/Mediator еще строже.
+REST-контроллеры backend теперь остаются в Control-слое: они принимают HTTP-параметры, применяют `@PreAuthorize`/validation-аннотации и делегируют бизнес-операции соответствующим сервисам.
 
 ---
 
@@ -211,7 +213,7 @@ Foundation инкапсулирует инфраструктуру: базы д�
 | `SupportMessageRepository` | Доступ к сообщениям поддержки. |
 | `RadioSignalTestRepository` | Доступ к истории радиотестов. |
 | PostgreSQL | Основное серверное хранилище. |
-| `RestClient` в `RadioSignalController` | Запрос погодных данных Open-Meteo для расчета радиосигнала. |
+| `RestClient` в `RadioSignalService` | Запрос погодных данных Open-Meteo для расчета радиосигнала. |
 | `application.yml`, `application-dev.yml`, `application-prod.yml` | Конфигурация профилей, datasource, JWT и support mailbox. |
 | `docker-compose.yml` | Инфраструктурный запуск PostgreSQL и backend. |
 
@@ -232,7 +234,7 @@ Foundation инкапсулирует инфраструктуру: базы д�
 | `server/.../favorite` | Control/Entity/Foundation | CRUD controller, entity, repository. |
 | `server/.../support` | Control/Mediator/Entity/Foundation | REST/admin support workflows, entity, repository. |
 | `server/.../signal` | Control/Mediator/Entity/Foundation | REST радиотестов, расчет, entity, repository, Open-Meteo client. |
-| `server/.../stats`, `server/.../admin` | Control/Mediator | Aggregation endpoints и admin UI/API. |
+| `server/.../stats`, `server/.../admin` | Control/Mediator | Тонкие controllers и service-классы для агрегаций, ролей и admin UI/API. |
 
 ---
 

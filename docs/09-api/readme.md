@@ -102,6 +102,8 @@ public class OpenApiConfig {
 - `@Valid`, `@NotBlank`, `@Email` и другие validation-аннотации уточняют требования к входным данным;
 - `@PreAuthorize` не заменяет OpenAPI-описание, но показывает в коде фактические правила доступа к операциям.
 
+Контроллеры описывают HTTP-контракт и делегируют бизнес-сценарии service-слою (`FavoriteCityService`, `RadioSignalService`, `SupportService`, `UserStatsService`, `AdminService`). Поэтому часть response records, которые видит OpenAPI, объявлена в сервисах, а request records остаются рядом с контроллерами.
+
 Отдельные аннотации `@Operation`, `@Tag` и `@ApiResponse` сейчас в контроллерах не используются. Поэтому описания операций в Swagger UI в основном выводятся из имён методов, маршрутов, типов параметров и DTO. При необходимости детализации документации можно добавить эти аннотации в контроллеры.
 
 ## 7. Группы API, которые отображаются в Swagger UI

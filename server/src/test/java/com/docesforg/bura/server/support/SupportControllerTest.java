@@ -33,8 +33,8 @@ class SupportControllerTest {
         when(messageRepository.findAllByAccountIdAndSenderAndSeenByAdminFalse(accountId, "USER"))
                 .thenReturn(List.of(unread));
 
-        SupportController controller = new SupportController(messageRepository, "support@bura.app");
-        SupportController.SupportConversationResponse response = controller.adminConversation(accountId);
+        SupportService service = new SupportService(messageRepository, "support@bura.app");
+        SupportService.SupportConversationResponse response = service.adminConversation(accountId);
 
         assertEquals(3, response.messages().size());
         assertEquals(true, unread.isSeenByAdmin());
@@ -47,8 +47,8 @@ class SupportControllerTest {
         SupportMessageEntity only = message(4L, accountId, "USER", false, "hello", Instant.parse("2026-02-01T10:00:00Z"));
         when(messageRepository.findAllByAccountIdOrderByCreatedAtAsc(accountId)).thenReturn(List.of(only));
 
-        SupportController controller = new SupportController(messageRepository, "support@bura.app");
-        SupportController.SupportConversationResponse response = controller.conversation(accountId);
+        SupportService service = new SupportService(messageRepository, "support@bura.app");
+        SupportService.SupportConversationResponse response = service.conversation(accountId);
 
         assertEquals(1, response.messages().size());
         verify(messageRepository).findAllByAccountIdOrderByCreatedAtAsc(accountId);
@@ -58,9 +58,9 @@ class SupportControllerTest {
     @Test
     void adminConversationReturnsNotFoundWhenNoMessages() {
         when(messageRepository.findAllByAccountIdOrderByCreatedAtAsc(9L)).thenReturn(List.of());
-        SupportController controller = new SupportController(messageRepository, "support@bura.app");
+        SupportService service = new SupportService(messageRepository, "support@bura.app");
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> controller.adminConversation(9L));
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.adminConversation(9L));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 

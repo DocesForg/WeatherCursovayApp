@@ -26,8 +26,8 @@ class FavoriteCityControllerTest {
         FavoriteCityEntity second = entity(2L, 10L, "Lviv", 49.84, 24.03);
         when(repository.findAllByAccountId(10L)).thenReturn(List.of(first, second));
 
-        FavoriteCityController controller = new FavoriteCityController(repository);
-        List<FavoriteCityController.FavoriteCityResponse> result = controller.list(10L);
+        FavoriteCityService service = new FavoriteCityService(repository);
+        List<FavoriteCityService.FavoriteCityResponse> result = service.list(10L);
 
         assertEquals(2, result.size());
         assertEquals("Kyiv", result.get(0).cityName());
@@ -39,8 +39,8 @@ class FavoriteCityControllerTest {
         FavoriteCityEntity match = entity(3L, 12L, "New York", 40.71, -74.0);
         when(repository.findAllByAccountIdAndCityNameContainingIgnoreCase(12L, "new")).thenReturn(List.of(match));
 
-        FavoriteCityController controller = new FavoriteCityController(repository);
-        List<FavoriteCityController.FavoriteCityResponse> result = controller.search(12L, "new");
+        FavoriteCityService service = new FavoriteCityService(repository);
+        List<FavoriteCityService.FavoriteCityResponse> result = service.search(12L, "new");
 
         assertEquals(1, result.size());
         assertEquals(3L, result.get(0).id());
@@ -55,11 +55,8 @@ class FavoriteCityControllerTest {
             return saved;
         });
 
-        FavoriteCityController controller = new FavoriteCityController(repository);
-        FavoriteCityController.FavoriteCityResponse response = controller.create(
-                77L,
-                new FavoriteCityController.FavoriteCityRequest("Odesa", 46.48, 30.73)
-        );
+        FavoriteCityService service = new FavoriteCityService(repository);
+        FavoriteCityService.FavoriteCityResponse response = service.create(77L, "Odesa", 46.48, 30.73);
 
         assertEquals(99L, response.id());
         assertEquals("Odesa", response.cityName());
@@ -73,12 +70,8 @@ class FavoriteCityControllerTest {
         when(repository.findByIdAndAccountId(15L, 8L)).thenReturn(Optional.of(existing));
         when(repository.save(existing)).thenReturn(existing);
 
-        FavoriteCityController controller = new FavoriteCityController(repository);
-        FavoriteCityController.FavoriteCityResponse response = controller.update(
-                8L,
-                15L,
-                new FavoriteCityController.FavoriteCityRequest("Dnipro", 48.46, 35.04)
-        );
+        FavoriteCityService service = new FavoriteCityService(repository);
+        FavoriteCityService.FavoriteCityResponse response = service.update(8L, 15L, "Dnipro", 48.46, 35.04);
 
         assertEquals("Dnipro", existing.getCityName());
         assertEquals(48.46, existing.getLatitude());
@@ -89,11 +82,11 @@ class FavoriteCityControllerTest {
     @Test
     void updateThrowsNotFoundWhenFavoriteMissing() {
         when(repository.findByIdAndAccountId(15L, 8L)).thenReturn(Optional.empty());
-        FavoriteCityController controller = new FavoriteCityController(repository);
+        FavoriteCityService service = new FavoriteCityService(repository);
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> controller.update(8L, 15L, new FavoriteCityController.FavoriteCityRequest("Dnipro", 48.46, 35.04))
+                () -> service.update(8L, 15L, "Dnipro", 48.46, 35.04)
         );
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
@@ -104,8 +97,8 @@ class FavoriteCityControllerTest {
         FavoriteCityEntity existing = entity(21L, 2L, "Paris", 48.85, 2.35);
         when(repository.findByIdAndAccountId(21L, 2L)).thenReturn(Optional.of(existing));
 
-        FavoriteCityController controller = new FavoriteCityController(repository);
-        controller.delete(2L, 21L);
+        FavoriteCityService service = new FavoriteCityService(repository);
+        service.delete(2L, 21L);
 
         verify(repository).delete(existing);
     }

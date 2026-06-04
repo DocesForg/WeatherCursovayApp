@@ -29,8 +29,8 @@ class UserStatsControllerTest {
                 .thenReturn(List.of(new RadioSignalTestEntity()));
         when(supportMessageRepository.existsByAccountId(accountId)).thenReturn(true);
 
-        var controller = new UserStatsController(favoriteCityRepository, radioSignalTestRepository, supportMessageRepository);
-        var response = controller.get(accountId);
+        var service = new UserStatsService(favoriteCityRepository, radioSignalTestRepository, supportMessageRepository);
+        var response = service.get(accountId);
 
         assertEquals(2, response.favorites());
         assertEquals(1, response.radioTests());
@@ -44,8 +44,8 @@ class UserStatsControllerTest {
         when(radioSignalTestRepository.findAllByAccountIdOrderByCreatedAtDesc(accountId)).thenReturn(List.of());
         when(supportMessageRepository.existsByAccountId(accountId)).thenReturn(false);
 
-        var controller = new UserStatsController(favoriteCityRepository, radioSignalTestRepository, supportMessageRepository);
-        var response = controller.get(accountId);
+        var service = new UserStatsService(favoriteCityRepository, radioSignalTestRepository, supportMessageRepository);
+        var response = service.get(accountId);
 
         assertEquals(0, response.favorites());
         assertEquals(0, response.radioTests());
